@@ -1,6 +1,5 @@
 TARGET = kernel.elf
-OBJS = main.o graphics.o mouse.o font.o hankaku.o newlib_support.o console.o \
-       pci.o asmfunc.o libcxx_support.o logger.o \
+OBJS = main.o graphics.o font.o hankaku.o newlib_support.o console.o pci.o asmfunc.o
 			 
 DEPENDS = $(join $(dir $(OBJS)),$(addprefix .,$(notdir $(OBJS:.o=.d))))
 
