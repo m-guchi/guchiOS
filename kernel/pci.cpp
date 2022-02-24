@@ -150,6 +150,10 @@ namespace pci {
     WriteAddress(MakeAddress(dev.bus, dev.device, dev.function, reg_addr));
     return ReadData();
   }
+  void WriteConfReg(const Device& dev, uint8_t reg_addr, uint32_t value) {
+    WriteAddress(MakeAddress(dev.bus, dev.device, dev.function, reg_addr));
+    WriteData(value);
+  }
 
   WithError<uint64_t> ReadBar(Device& device, unsigned int bar_index){
     if(bar_index >= 6){

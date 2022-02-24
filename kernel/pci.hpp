@@ -50,6 +50,7 @@ namespace pci {
   bool IsSingleFunctionDevice(uint8_t header_type); //単一ファンクションであるか
 
   uint32_t ReadConfReg(const Device& dev, uint8_t reg_addr); //PCIデバイスの32ビットレジスタを取得
+  void WriteConfReg(const Device& dev, uint8_t reg_addr, uint32_t value); //PCIデバイスの32ビットレジスタに書き込み
 
   inline std::array<Device, 32> devices; //デバイス一覧
   inline int num_device; //デバイス数
