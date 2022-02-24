@@ -11,7 +11,7 @@ namespace {
 
 extern Console* console;
 
-void setLogLevel(LogLevel level){
+void SetLogLevel(LogLevel level){
   log_level = level;
 }
 

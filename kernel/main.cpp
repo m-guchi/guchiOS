@@ -15,7 +15,7 @@
 #include "font.hpp"
 #include "console.hpp"
 #include "pci.hpp"
-// #include "logger.hpp"
+#include "logger.hpp"
 // #include "usb/memory.hpp"
 // #include "usb/device.hpp"
 // #include "usb/classdriver/mouse.hpp"
@@ -101,6 +101,7 @@ extern "C" void KernelMain(const FrameBufferConfig& frame_buffer_config){
   console = new(console_buf) Console{*pixel_writer, {255, 255, 255}, {0, 0, 0}};
 
   printk("Welcome to GuchiOS!!\n");
+  SetLogLevel(kDebug);
 
   for(int dy=0;dy<kMouseCursorHeight;++dy){
     for(int dx=0;dx<kMouseCursorWidth;++dx){
@@ -113,13 +114,13 @@ extern "C" void KernelMain(const FrameBufferConfig& frame_buffer_config){
   }
 
   auto err = pci::ScanAllBus();
-  printk("ScanAllBus: %s, device_num=%d\n", err.Name(), pci::num_device);
+  Log(kDebug, "ScanAllBus: %s, device_num=%d\n", err.Name(), pci::num_device);
 
   for (int i = 0; i < pci::num_device; ++i) {
     const auto& dev = pci::devices[i];
     auto vendor_id = pci::ReadVendorId(dev);
     auto class_code = pci::ReadClassCode(dev.bus, dev.device, dev.function);
-    printk("%d.%d.%d: vend %04x, class %08x, head %02x\n",
+    Log(kDebug, "%d.%d.%d: vend %04x, class %08x, head %02x\n",
         dev.bus, dev.device, dev.function,
         vendor_id, class_code, dev.header_type);
   }
@@ -135,7 +136,7 @@ extern "C" void KernelMain(const FrameBufferConfig& frame_buffer_config){
     }
   }
   if(xhc_dev){
-    printk("xHC has been found: %d.%d.%d\n", xhc_dev->bus, xhc_dev->device, xhc_dev->function);
+    Log(kInfo, "xHC has been found: %d.%d.%d\n", xhc_dev->bus, xhc_dev->device, xhc_dev->function);
   }
 
   // const WithError<uint64_t> xhc_bar = pci::ReadBar(*xhc_dev, 0);
