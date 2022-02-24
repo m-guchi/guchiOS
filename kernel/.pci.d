@@ -31,4 +31,5 @@ pci.o: pci.cpp pci.hpp \
   /home/guchi/osbook/devenv/x86_64-elf/include/_ansi.h \
   /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/functional \
   /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/bit error.hpp \
-  asmfunc.h
+  /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/cstdio \
+  /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/stdio.h asmfunc.h

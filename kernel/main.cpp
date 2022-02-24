@@ -18,8 +18,8 @@
 // #include "logger.hpp"
 // #include "usb/memory.hpp"
 // #include "usb/device.hpp"
-// #include "usb/classdriver/mouse.hpp"
-// #include "usb/xhci/xhci.hpp"
+#include "usb/classdriver/mouse.hpp"
+#include "usb/xhci/xhci.hpp"
 // #include "usb/xhci/trb.hpp"
 
 
@@ -137,6 +137,9 @@ extern "C" void KernelMain(const FrameBufferConfig& frame_buffer_config){
   if(xhc_dev){
     printk("xHC has been found: %d.%d.%d\n", xhc_dev->bus, xhc_dev->device, xhc_dev->function);
   }
+
+  const WithError<uint64_t> xhc_bar = pci::ReadBar(*xhc_dev, 0);
+  const uint64_t xhc_mmio_base = xhc_bar.value & ~static_cast<uint64_t>(0xf);
 
   
   while(1) __asm__("hlt");

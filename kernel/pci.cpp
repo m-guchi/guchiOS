@@ -20,12 +20,12 @@ namespace {
   //devices に追加
   Error AddDevice(const Device& device){
     if(num_device == devices.size()){
-      return Error::kFull;
+      return MAKE_ERROR(Error::kFull);
     }
 
     devices[num_device] = device;
     ++num_device;
-    return Error::kSuccess;
+    return MAKE_ERROR(Error::kSuccess);
   }
 
   Error ScanBus(uint8_t bus);
@@ -46,7 +46,7 @@ namespace {
       return ScanBus(secondary_bus);
     }
 
-    return Error::kSuccess;
+    return MAKE_ERROR(Error::kSuccess);
   }
 
   //指定デバイス以下にある有効なファンクションを検索
@@ -55,7 +55,7 @@ namespace {
       return err;
     }
     if(IsSingleFunctionDevice(ReadHeaderType(bus, device, 0))){
-      return Error::kSuccess;
+      return MAKE_ERROR(Error::kSuccess);
     }
 
     for(uint8_t func=1; func<8; ++func){
@@ -66,7 +66,7 @@ namespace {
         return err;
       }
     }
-    return Error::kSuccess;
+    return MAKE_ERROR(Error::kSuccess);
   }
 
   //指定バス以下にある有効なデバイスを探索
@@ -79,7 +79,7 @@ namespace {
         return err;
       }
     }
-    return Error::kSuccess;
+    return MAKE_ERROR(Error::kSuccess);
   }
 }
 
@@ -142,6 +142,34 @@ namespace pci {
       }
     }
 
-    return Error::kSuccess;
+    return MAKE_ERROR(Error::kSuccess);
+  }
+
+
+  uint32_t ReadConfReg(const Device& dev, uint8_t reg_addr){
+    WriteAddress(MakeAddress(dev.bus, dev.device, dev.function, reg_addr));
+    return ReadData();
+  }
+
+  WithError<uint64_t> ReadBar(Device& device, unsigned int bar_index){
+    if(bar_index >= 6){
+      return {0, MAKE_ERROR(Error::kIndexOutOfRange)};
+    }
+
+    const auto addr = CalcBarAddress(bar_index);
+    const auto bar = ReadConfReg(device, addr);
+
+    if((bar & 4u) == 0){ //32bit
+      return {bar, MAKE_ERROR(Error::kSuccess)};
+    }
+    if(bar_index >= 5){ //64bit
+      return {0, MAKE_ERROR(Error::kIndexOutOfRange)};
+    }
+
+    const auto bar_upper = ReadConfReg(device, addr+4);
+    return {
+      bar | (static_cast<uint64_t>(bar_upper) << 32),
+      MAKE_ERROR(Error::kSuccess)
+    };
   }
 }

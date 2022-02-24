@@ -49,8 +49,15 @@ namespace pci {
   
   bool IsSingleFunctionDevice(uint8_t header_type); //単一ファンクションであるか
 
+  uint32_t ReadConfReg(const Device& dev, uint8_t reg_addr); //PCIデバイスの32ビットレジスタを取得
+
   inline std::array<Device, 32> devices; //デバイス一覧
   inline int num_device; //デバイス数
 
   Error ScanAllBus();
+
+  constexpr uint8_t CalcBarAddress(unsigned int bar_index){
+    return 0x10 + 4*bar_index;
+  }
+  WithError<uint64_t> ReadBar(Device& device, unsigned int bar_index);
 }
