@@ -6,58 +6,61 @@
 #include <cstddef>
 #include <cstdio>
 
-// #include <numeric>
-// #include <vector>
+#include <numeric>
+#include <vector>
 
 #include "frame_buffer_config.hpp"
 #include "graphics.hpp"
-// #include "mouse.hpp"
+#include "mouse.hpp"
 #include "font.hpp"
 #include "console.hpp"
 #include "pci.hpp"
 #include "logger.hpp"
-// #include "usb/memory.hpp"
-// #include "usb/device.hpp"
-// #include "usb/classdriver/mouse.hpp"
+#include "usb/memory.hpp"
+#include "usb/device.hpp"
+#include "usb/classdriver/mouse.hpp"
 #include "usb/xhci/xhci.hpp"
-// #include "usb/xhci/trb.hpp"
+#include "usb/xhci/trb.hpp"
 
+
+const PixelColor kDesktopBGColor{45, 118, 237};
+const PixelColor kDesktopFGColor{255, 255, 255};
 
 // void* operator new(size_t size, void* buf){
 //   return buf;
+// // }
+// void operator delete(void* obj) noexcept{
 // }
-void operator delete(void* obj) noexcept{
-}
 
 
-const int kMouseCursorWidth = 15;
-const int kMouseCursorHeight = 24;
-const char mouse_cursor_shape[kMouseCursorHeight][kMouseCursorWidth+1] = {
-  "@              ",
-  "@@             ",
-  "@.@            ",
-  "@..@           ",
-  "@...@          ",
-  "@....@         ",
-  "@.....@        ",
-  "@......@       ",
-  "@.......@      ",
-  "@........@     ",
-  "@.........@    ",
-  "@..........@   ",
-  "@...........@  ",
-  "@............@ ",
-  "@......@@@@@@@@",
-  "@......@       ",
-  "@....@@.@      ",
-  "@...@ @.@      ",
-  "@..@   @.@     ",
-  "@.@    @.@     ",
-  "@@      @.@    ",
-  "@       @.@    ",
-  "         @.@   ",
-  "         @@@   ",
-};
+// const int kMouseCursorWidth = 15;
+// const int kMouseCursorHeight = 24;
+// const char mouse_cursor_shape[kMouseCursorHeight][kMouseCursorWidth+1] = {
+//   "@              ",
+//   "@@             ",
+//   "@.@            ",
+//   "@..@           ",
+//   "@...@          ",
+//   "@....@         ",
+//   "@.....@        ",
+//   "@......@       ",
+//   "@.......@      ",
+//   "@........@     ",
+//   "@.........@    ",
+//   "@..........@   ",
+//   "@...........@  ",
+//   "@............@ ",
+//   "@......@@@@@@@@",
+//   "@......@       ",
+//   "@....@@.@      ",
+//   "@...@ @.@      ",
+//   "@..@   @.@     ",
+//   "@.@    @.@     ",
+//   "@@      @.@    ",
+//   "@       @.@    ",
+//   "         @.@   ",
+//   "         @@@   ",
+// };
 
 
 char pixel_writer_buf[sizeof(RGBResv8BitPerColorPixelWriter)];
@@ -78,6 +81,14 @@ int printk(const char* format, ...){
 
   console->PutString(s);
   return result;
+}
+
+
+char mouse_cursor_buf[sizeof(MouseCursor)];
+MouseCursor* mouse_cursor;
+
+void MouseObserver(int8_t displacement_x, int8_t displacement_y) {
+  mouse_cursor->MoveRelative({displacement_x, displacement_y});
 }
 
 
@@ -102,6 +113,11 @@ void SwitchEhci2Xhci(const pci::Device& xhc_dev) {
       superspeed_ports, ehci2xhci_ports);
 }
 
+
+extern "C" void __cxa_pure_virtual() {
+  while (1) __asm__("hlt");
+}
+
 extern "C" void KernelMain(const FrameBufferConfig& frame_buffer_config){
   switch(frame_buffer_config.pixel_format){
     case kPixelRGBResv8BitPerColor:
@@ -120,20 +136,16 @@ extern "C" void KernelMain(const FrameBufferConfig& frame_buffer_config){
     }
   }
   
-  console = new(console_buf) Console{*pixel_writer, {255, 255, 255}, {0, 0, 0}};
+  console = new(console_buf) Console{
+    *pixel_writer, kDesktopFGColor, kDesktopBGColor
+  };
 
   printk("Welcome to GuchiOS!!\n");
   SetLogLevel(kDebug);
 
-  for(int dy=0;dy<kMouseCursorHeight;++dy){
-    for(int dx=0;dx<kMouseCursorWidth;++dx){
-      if(mouse_cursor_shape[dy][dx] == '@'){
-        pixel_writer->Write(200+dx, 100+dy, {255,255,255});
-      }else if(mouse_cursor_shape[dy][dx] == '.'){
-        pixel_writer->Write(200+dx, 100+dy, {0,0,0});
-      }
-    }
-  }
+  mouse_cursor = new(mouse_cursor_buf) MouseCursor{
+    pixel_writer, kDesktopBGColor, {300, 200}
+  };
 
   auto err = pci::ScanAllBus();
   Log(kDebug, "ScanAllBus: %s, device_num=%d\n", err.Name(), pci::num_device);
@@ -174,6 +186,31 @@ extern "C" void KernelMain(const FrameBufferConfig& frame_buffer_config){
   {
     auto err = xhc.Initialize();
     Log(kDebug, "xhc.Initialize: %s\n", err.Name());
+  }
+
+  Log(kInfo, "xHC starting\n");
+  xhc.Run();
+
+  usb::HIDMouseDriver::default_observer = MouseObserver;
+
+  for (int i = 1; i <= xhc.MaxPorts(); ++i) {
+    auto port = xhc.PortAt(i);
+    Log(kDebug, "Port %d: IsConnected=%d\n", i, port.IsConnected());
+
+    if (port.IsConnected()) {
+      if (auto err = ConfigurePort(xhc, port)) {
+        Log(kError, "failed to configure port: %s at %s:%d\n",
+            err.Name(), err.File(), err.Line());
+        continue;
+      }
+    }
+  }
+
+  while (1) {
+    if (auto err = ProcessEvent(xhc)) {
+      Log(kError, "Error while ProcessEvent: %s at %s:%d\n",
+          err.Name(), err.File(), err.Line());
+    }
   }
 
   
