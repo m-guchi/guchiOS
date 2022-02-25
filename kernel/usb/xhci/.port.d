@@ -1,6 +1,8 @@
-usb/xhci/xhci.o: usb/xhci/xhci.cpp usb/xhci/xhci.hpp error.hpp \
-  /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/cstdio \
+usb/xhci/port.o: usb/xhci/port.cpp usb/xhci/port.hpp \
+  /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/cstdint \
   /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/__config \
+  /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/stdint.h error.hpp \
+  /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/cstdio \
   /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/stdio.h \
   /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/array \
   /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/__tuple \
@@ -11,8 +13,6 @@ usb/xhci/xhci.o: usb/xhci/xhci.cpp usb/xhci/xhci.hpp error.hpp \
   /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/initializer_list \
   /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/cstring \
   /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/string.h \
-  /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/cstdint \
-  /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/stdint.h \
   /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/__debug \
   /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/iterator \
   /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/iosfwd \
@@ -33,14 +33,13 @@ usb/xhci/xhci.o: usb/xhci/xhci.cpp usb/xhci/xhci.hpp error.hpp \
   /home/guchi/osbook/devenv/x86_64-elf/include/_ansi.h \
   /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/functional \
   /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/bit \
-  usb/xhci/registers.hpp register.hpp usb/xhci/context.hpp \
-  usb/endpoint.hpp usb/xhci/ring.hpp \
+  usb/xhci/registers.hpp register.hpp usb/xhci/xhci.hpp \
+  usb/xhci/context.hpp usb/endpoint.hpp usb/xhci/ring.hpp \
   /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/vector \
   /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/__bit_reference \
   /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/climits \
   /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/limits.h \
   /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/__split_buffer \
-  usb/memory.hpp usb/xhci/trb.hpp usb/xhci/port.hpp usb/xhci/devmgr.hpp \
+  usb/memory.hpp usb/xhci/trb.hpp usb/xhci/devmgr.hpp \
   usb/xhci/device.hpp usb/device.hpp usb/setupdata.hpp usb/arraymap.hpp \
-  /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/optional \
-  logger.hpp usb/descriptor.hpp usb/xhci/speed.hpp
+  /home/guchi/osbook/devenv/x86_64-elf/include/c++/v1/optional
