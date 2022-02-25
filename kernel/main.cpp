@@ -26,42 +26,6 @@
 const PixelColor kDesktopBGColor{45, 118, 237};
 const PixelColor kDesktopFGColor{255, 255, 255};
 
-// void* operator new(size_t size, void* buf){
-//   return buf;
-// // }
-// void operator delete(void* obj) noexcept{
-// }
-
-
-// const int kMouseCursorWidth = 15;
-// const int kMouseCursorHeight = 24;
-// const char mouse_cursor_shape[kMouseCursorHeight][kMouseCursorWidth+1] = {
-//   "@              ",
-//   "@@             ",
-//   "@.@            ",
-//   "@..@           ",
-//   "@...@          ",
-//   "@....@         ",
-//   "@.....@        ",
-//   "@......@       ",
-//   "@.......@      ",
-//   "@........@     ",
-//   "@.........@    ",
-//   "@..........@   ",
-//   "@...........@  ",
-//   "@............@ ",
-//   "@......@@@@@@@@",
-//   "@......@       ",
-//   "@....@@.@      ",
-//   "@...@ @.@      ",
-//   "@..@   @.@     ",
-//   "@.@    @.@     ",
-//   "@@      @.@    ",
-//   "@       @.@    ",
-//   "         @.@   ",
-//   "         @@@   ",
-// };
-
 
 char pixel_writer_buf[sizeof(RGBResv8BitPerColorPixelWriter)];
 PixelWriter* pixel_writer;
