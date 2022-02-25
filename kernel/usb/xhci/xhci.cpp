@@ -196,6 +196,43 @@ namespace {
     auto port_id = trb.bits.port_id;
     auto port = xhc.PortAt(port_id);
 
+    // kNotConnected,
+    // kWaitingAddressed,
+    // kResettingPort,
+    // kEnablingSlot,
+    // kAddressingDevice,
+    // kInitializingDevice,
+    // kConfiguringEndpoints,
+    // kConfigured,
+
+    switch(port_config_phase[port_id]){
+      case ConfigPhase::kWaitingAddressed:
+        Log(kDebug, "kWaitingAddressed");
+        break;
+      case ConfigPhase::kEnablingSlot:
+        Log(kDebug, "kEnablingSlot");
+        break;
+      case ConfigPhase::kAddressingDevice:
+        Log(kDebug, "kAddressingDevice");
+        break;
+      case ConfigPhase::kInitializingDevice:
+        Log(kDebug, "kInitializingDevice");
+        break;
+      case ConfigPhase::kConfiguringEndpoints:
+        Log(kDebug, "kConfiguringEndpoints");
+        break;
+      case ConfigPhase::kConfigured:
+        Log(kDebug, "kConfigured");
+        break;
+      case ConfigPhase::kNotConnected:
+        Log(kDebug, "kNotConnected");
+        break;
+      case ConfigPhase::kResettingPort:
+        Log(kDebug, "kResettingPort");
+        break;
+    }
+    Log(kDebug, "\n");
+
     switch (port_config_phase[port_id]) {
     case ConfigPhase::kNotConnected:
       return ResetPort(xhc, port);
@@ -243,6 +280,8 @@ namespace {
       }
 
       auto port_id = dev->DeviceContext()->slot_context.bits.root_hub_port_num;
+
+      Log(kDebug, "Custom port_id=%d, addressing_port=%d\n",port_id, addressing_port);
 
       if (port_id != addressing_port) {
         return MAKE_ERROR(Error::kInvalidPhase);

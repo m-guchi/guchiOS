@@ -23,7 +23,7 @@
 #include "usb/xhci/trb.hpp"
 
 
-const PixelColor kDesktopBGColor{45, 118, 237};
+const PixelColor kDesktopBGColor{0, 0, 0};
 const PixelColor kDesktopFGColor{255, 255, 255};
 
 
@@ -105,7 +105,7 @@ extern "C" void KernelMain(const FrameBufferConfig& frame_buffer_config){
   };
 
   printk("Welcome to GuchiOS!!\n");
-  SetLogLevel(kDebug);
+  SetLogLevel(kWarn);
 
   mouse_cursor = new(mouse_cursor_buf) MouseCursor{
     pixel_writer, kDesktopBGColor, {300, 200}

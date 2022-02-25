@@ -36,9 +36,9 @@ namespace {
     for (int dy = 0; dy < kMouseCursorHeight; ++dy) {
       for (int dx = 0; dx < kMouseCursorWidth; ++dx) {
         if (mouse_cursor_shape[dy][dx] == '@') {
-          pixel_writer->Write(position.x + dx, position.y + dy, {0, 0, 0});
-        } else if (mouse_cursor_shape[dy][dx] == '.') {
           pixel_writer->Write(position.x + dx, position.y + dy, {255, 255, 255});
+        } else if (mouse_cursor_shape[dy][dx] == '.') {
+          pixel_writer->Write(position.x + dx, position.y + dy, {0, 0, 0});
         }
       }
     }
