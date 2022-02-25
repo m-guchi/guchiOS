@@ -18,3 +18,22 @@ IoIn32:
     mov dx, di    ; dx = addr
     in eax, dx
     ret
+
+
+global GetCS
+GetCS:
+    xor eax, eax
+    mov ax, cs
+    ret
+
+global LoadIDT
+LoadIDT:
+    push rbp
+    mov rbp, rsp
+    sub rsp, 10
+    mov [rsp], di
+    mov [rsp+2], rsi
+    lidt [rsp]
+    mov rsp, rbp
+    pop rbp
+    ret
