@@ -15,14 +15,12 @@
 #include "font.hpp"
 #include "console.hpp"
 #include "pci.hpp"
-#include "interrupt.hpp"
 #include "logger.hpp"
 #include "usb/memory.hpp"
 #include "usb/device.hpp"
 #include "usb/classdriver/mouse.hpp"
 #include "usb/xhci/xhci.hpp"
 #include "usb/xhci/trb.hpp"
-#include "asmfunc.h"
 
 
 const PixelColor kDesktopBGColor{0, 0, 0};
@@ -80,19 +78,6 @@ void SwitchEhci2Xhci(const pci::Device& xhc_dev) {
 }
 
 
-usb::xhci::Controller* xhc;
-__attribute__((interrupt))
-void IntHandlerXHCI(InterruptFrame* frame){
-  while (xhc->PrimaryEventRing()->HasFront()) {
-    if (auto err = ProcessEvent(*xhc)) {
-      Log(kError, "Error while ProcessEvent: %s at %s:%d\n",
-          err.Name(), err.File(), err.Line());
-    }
-  }
-  NotifyEndOfInterrupt();
-}
-
-
 extern "C" void __cxa_pure_virtual() {
   while (1) __asm__("hlt");
 }
@@ -120,7 +105,7 @@ extern "C" void KernelMain(const FrameBufferConfig& frame_buffer_config){
   };
 
   printk("Welcome to GuchiOS!!\n");
-  SetLogLevel(kDebug);
+  SetLogLevel(kInfo);
 
   mouse_cursor = new(mouse_cursor_buf) MouseCursor{
     pixel_writer, kDesktopBGColor, {300, 200}
@@ -152,18 +137,6 @@ extern "C" void KernelMain(const FrameBufferConfig& frame_buffer_config){
     Log(kInfo, "xHC has been found: %d.%d.%d\n", xhc_dev->bus, xhc_dev->device, xhc_dev->function);
   }
 
-  const uint16_t cs = GetCS();
-  SetIDTEntry(idt[InterruptVector::kXHCI], MakeIDTAttr(DescriptorType::kInterruptGate, 0),
-              reinterpret_cast<uint64_t>(IntHandlerXHCI), cs);
-  LoadIDT(sizeof(idt)-1, reinterpret_cast<uintptr_t>(&idt[0]));
-
-  const uint8_t bsp_local_api_id = *reinterpret_cast<const uint32_t*>(0xfee00020) >> 24;
-  pci::ConfigureMSIFixedDestination(
-    *xhc_dev, bsp_local_api_id,
-    pci::MSITriggerMode::kLevel, pci::MSIDeliveryMode::kFixed,
-    InterruptVector::kXHCI, 0
-  );
-
   const WithError<uint64_t> xhc_bar = pci::ReadBar(*xhc_dev, 0);
   Log(kDebug, "ReadBar: %s\n", xhc_bar.error.Name());
   const uint64_t xhc_mmio_base = xhc_bar.value & ~static_cast<uint64_t>(0xf);
@@ -194,6 +167,15 @@ extern "C" void KernelMain(const FrameBufferConfig& frame_buffer_config){
             err.Name(), err.File(), err.Line());
         continue;
       }
+    }
+  }
+
+  Log(kInfo, "custom start Loop\n");
+
+  while (1) {
+    if (auto err = ProcessEvent(xhc)) {
+      Log(kError, "Error while ProcessEvent: %s at %s:%d\n",
+          err.Name(), err.File(), err.Line());
     }
   }
 

@@ -35,6 +35,39 @@ namespace {
    * （kAddressingDevice）までの一連の処理の実行を待っている状態．
    */
 
+
+
+  void CustomOutputConfig(ConfigPhase input_config){
+    switch(input_config){
+      case ConfigPhase::kWaitingAddressed:
+        Log(kInfo, "kWaitingAddressed");
+        break;
+      case ConfigPhase::kEnablingSlot:
+        Log(kInfo, "kEnablingSlot");
+        break;
+      case ConfigPhase::kAddressingDevice:
+        Log(kInfo, "kAddressingDevice");
+        break;
+      case ConfigPhase::kInitializingDevice:
+        Log(kInfo, "kInitializingDevice");
+        break;
+      case ConfigPhase::kConfiguringEndpoints:
+        Log(kInfo, "kConfiguringEndpoints");
+        break;
+      case ConfigPhase::kConfigured:
+        Log(kInfo, "kConfigured");
+        break;
+      case ConfigPhase::kNotConnected:
+        Log(kInfo, "kNotConnected");
+        break;
+      case ConfigPhase::kResettingPort:
+        Log(kInfo, "kResettingPort");
+        break;
+    }
+    Log(kInfo, " custom Status\n");
+  }
+
+
   std::array<volatile ConfigPhase, 256> port_config_phase{};  // index: port number
 
   /** kResettingPort から kAddressingDevice までの処理を実行中のポート番号．
@@ -87,22 +120,25 @@ namespace {
 
   Error ResetPort(Controller& xhc, Port& port) {
     const bool is_connected = port.IsConnected();
-    Log(kDebug, "ResetPort: port.IsConnected() = %s\n",
+    Log(kInfo, "ResetPort: port.IsConnected() = %s\n",
         is_connected ? "true" : "false");
 
     if (!is_connected) {
       return MAKE_ERROR(Error::kSuccess);
     }
 
+    Log(kWarn, "custon addressing_port=%d\n",addressing_port);
     if (addressing_port != 0) {
       port_config_phase[port.Number()] = ConfigPhase::kWaitingAddressed;
     } else {
       const auto port_phase = port_config_phase[port.Number()];
+      CustomOutputConfig(port_phase);
       if (port_phase != ConfigPhase::kNotConnected &&
           port_phase != ConfigPhase::kWaitingAddressed) {
         return MAKE_ERROR(Error::kInvalidPhase);
       }
       addressing_port = port.Number();
+      Log(kWarn, "custon set addressing_port=%d\n",addressing_port);
       port_config_phase[port.Number()] = ConfigPhase::kResettingPort;
       port.Reset();
     }
@@ -129,7 +165,7 @@ namespace {
   }
 
   Error AddressDevice(Controller& xhc, uint8_t port_id, uint8_t slot_id) {
-    Log(kDebug, "AddressDevice: port_id = %d, slot_id = %d\n", port_id, slot_id);
+    Log(kInfo, "AddressDevice: port_id = %d, slot_id = %d\n", port_id, slot_id);
 
     xhc.DeviceManager()->AllocDevice(slot_id, xhc.DoorbellRegisterAt(slot_id));
 
@@ -192,46 +228,11 @@ namespace {
   }
 
   Error OnEvent(Controller& xhc, PortStatusChangeEventTRB& trb) {
-    Log(kDebug, "PortStatusChangeEvent: port_id = %d\n", trb.bits.port_id);
     auto port_id = trb.bits.port_id;
     auto port = xhc.PortAt(port_id);
+    Log(kInfo, "PortStatusChangeEvent: port_id = %d\n", port_id);
 
-    // kNotConnected,
-    // kWaitingAddressed,
-    // kResettingPort,
-    // kEnablingSlot,
-    // kAddressingDevice,
-    // kInitializingDevice,
-    // kConfiguringEndpoints,
-    // kConfigured,
-
-    switch(port_config_phase[port_id]){
-      case ConfigPhase::kWaitingAddressed:
-        Log(kDebug, "kWaitingAddressed");
-        break;
-      case ConfigPhase::kEnablingSlot:
-        Log(kDebug, "kEnablingSlot");
-        break;
-      case ConfigPhase::kAddressingDevice:
-        Log(kDebug, "kAddressingDevice");
-        break;
-      case ConfigPhase::kInitializingDevice:
-        Log(kDebug, "kInitializingDevice");
-        break;
-      case ConfigPhase::kConfiguringEndpoints:
-        Log(kDebug, "kConfiguringEndpoints");
-        break;
-      case ConfigPhase::kConfigured:
-        Log(kDebug, "kConfigured");
-        break;
-      case ConfigPhase::kNotConnected:
-        Log(kDebug, "kNotConnected");
-        break;
-      case ConfigPhase::kResettingPort:
-        Log(kDebug, "kResettingPort");
-        break;
-    }
-    Log(kDebug, "\n");
+    CustomOutputConfig(port_config_phase[port_id]);
 
     switch (port_config_phase[port_id]) {
     case ConfigPhase::kNotConnected:
@@ -246,6 +247,7 @@ namespace {
   Error OnEvent(Controller& xhc, TransferEventTRB& trb) {
     const uint8_t slot_id = trb.bits.slot_id;
     auto dev = xhc.DeviceManager()->FindBySlot(slot_id);
+    // Log(kInfo, "TransgerEvent: slot_id = %d\n", slot_id);
     if (dev == nullptr) {
       return MAKE_ERROR(Error::kInvalidSlotID);
     }
@@ -264,10 +266,11 @@ namespace {
   Error OnEvent(Controller& xhc, CommandCompletionEventTRB& trb) {
     const auto issuer_type = trb.Pointer()->bits.trb_type;
     const auto slot_id = trb.bits.slot_id;
-    Log(kDebug, "CommandCompletionEvent: slot_id = %d, issuer = %s\n",
+    Log(kInfo, "CommandCompletionEvent: slot_id = %d, issuer = %s\n",
         trb.bits.slot_id, kTRBTypeToName[issuer_type]);
 
     if (issuer_type == EnableSlotCommandTRB::Type) {
+      CustomOutputConfig(port_config_phase[addressing_port]);
       if (port_config_phase[addressing_port] != ConfigPhase::kEnablingSlot) {
         return MAKE_ERROR(Error::kInvalidPhase);
       }
@@ -453,6 +456,9 @@ namespace usb::xhci {
   }
 
   Error ConfigurePort(Controller& xhc, Port& port) {
+    Log(kInfo, "%d",port.Number());
+    CustomOutputConfig(port_config_phase[port.Number()]);
+
     if (port_config_phase[port.Number()] == ConfigPhase::kNotConnected) {
       return ResetPort(xhc, port);
     }
@@ -531,6 +537,7 @@ namespace usb::xhci {
 
     Error err = MAKE_ERROR(Error::kNotImplemented);
     auto event_trb = xhc.PrimaryEventRing()->Front();
+    Log(kInfo, "00-");
     if (auto trb = TRBDynamicCast<TransferEventTRB>(event_trb)) {
       err = OnEvent(xhc, *trb);
     } else if (auto trb = TRBDynamicCast<PortStatusChangeEventTRB>(event_trb)) {
